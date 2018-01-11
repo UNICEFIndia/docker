@@ -5,7 +5,7 @@ services:
     image: eltonplima/ureport:latest
     restart: always
     ports:
-      - "8000:8000"
+      - "8001:8000"
     depends_on:
       - database
       - redis
@@ -34,7 +34,7 @@ services:
     image: eltonplima/rapidpro:latest
     restart: always
     ports:
-      - "8001:8000"
+      - "8000:8000"
     depends_on:
       - database
       - redis
@@ -73,17 +73,6 @@ services:
     environment:
       - PGADMIN_DEFAULT_EMAIL=dba@rapidpro.unicef.in
       - PGADMIN_DEFAULT_PASSWORD=SuperSecret
-
-  nginx:
-    restart: always
-    build:
-      context: .
-      dockerfile: nginx.Dockerfile
-    ports:
-      - "80:80"
-    depends_on:
-      - rapidpro
-      - ureport
 
   mage:
     image: eltonplima/mage:0.1.87

@@ -1,0 +1,108 @@
+version: "3"
+
+services:
+  ureport:
+    image: eltonplima/ureport:latest
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+      - redis
+      - rapidpro
+    environment:
+      - DATABASE_URL=postgis://temba:temba@database/ureport
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - DEBUG=${DEBUG}
+      - ADMINS=${ADMINS}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USE_TLS=${EMAIL_USE_TLS}
+      - EMAIL_ALIAS=${EMAIL_ALIAS}
+      - RAVEN_DSN=${RAVEN_DSN}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
+      - AWS_S3_SECURE_URLS=${AWS_S3_SECURE_URLS}
+      - DEFAULT_FILE_STORAGE=${DEFAULT_FILE_STORAGE}
+    volumes:
+      - ureport_media:/home/app/media
+
+  rapidpro:
+    image: eltonplima/rapidpro:latest
+    restart: always
+    ports:
+      - "8001:8000"
+    depends_on:
+      - database
+      - redis
+      - mage
+    environment:
+      - DATABASE_URL=postgis://temba:temba@database/rapidpro
+      - REDIS_HOST=redis
+      - BROKER_URL=redis://redis:6379/15
+      - ALLOWED_HOSTS=*
+      - MAGE_AUTH_TOKEN=${MAGE_AUTH_TOKEN}
+      - TWITTER_API_KEY=${TWITTER_API_KEY}
+      - TWITTER_API_SECRET=${TWITTER_API_SECRET}
+    volumes:
+      - rapidpro_media:/home/app/media
+
+  database:
+    restart: always
+    build:
+      context: .
+      dockerfile: database.Dockerfile
+    ports:
+      - "5432:5432"
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8080:80"
+    depends_on:
+      - database
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=dba@rapidpro.unicef.in
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+
+  nginx:
+    restart: always
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - rapidpro
+      - ureport
+
+  mage:
+    image: eltonplima/mage:0.1.87
+    restart: always
+    environment:
+      - PRODUCTION=1
+      - DATABASE_URL=${DATABASE_URL:-postgresql://temba:temba@database/rapidpro}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_DATABASE=${REDIS_DATABASE:-8}
+      - TEMBA_HOST=${HOSTNAME:-rapidpro:8000}
+      - TEMBA_AUTH_TOKEN=${TEMBA_AUTH_TOKEN}
+      - TWITTER_API_KEY=${TWITTER_API_KEY}
+      - TWITTER_API_SECRET=${TWITTER_API_SECRET}
+      - SEGMENTIO_WRITE_KEY=${SEGMENTIO_WRITE_KEY}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - LIBRATO_EMAIL=${LIBRATO_EMAIL}
+      - LIBRATO_API_TOKEN=${LIBRATO_API_TOKEN}
+
+volumes:
+  database:
+  ureport_media:
+  rapidpro_media:

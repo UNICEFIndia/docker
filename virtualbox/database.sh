@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+    CREATE USER temba WITH ENCRYPTED PASSWORD 'temba' SUPERUSER;
+    CREATE DATABASE ureport;
+    CREATE DATABASE rapidpro;
+    GRANT ALL PRIVILEGES ON DATABASE ureport TO temba;
+    GRANT ALL PRIVILEGES ON DATABASE rapidpro TO temba;
+EOSQL

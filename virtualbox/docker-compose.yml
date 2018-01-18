@@ -37,6 +37,7 @@ services:
     restart: always
     ports:
       - "8000:8000"
+      - "4040:4040"
     depends_on:
       - database_team_a
       - redis_team_a

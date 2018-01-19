@@ -191,14 +191,6 @@ services:
       - LIBRATO_EMAIL=${LIBRATO_EMAIL}
       - LIBRATO_API_TOKEN=${LIBRATO_API_TOKEN}
 
-  # portainer_team_b:
-  #   image: portainer/portainer
-  #   restart: always
-  #   ports:
-  #     - "9001:9000"
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - ~/docker/team_portainer:/data 
   rapidpro_v2:
     image: eltonplima/rapidpro:v2
     restart: always
@@ -208,6 +200,7 @@ services:
       - database_team_a
       - redis_team_a
       - mage_team_a
+      - varnish
     environment:
       - DATABASE_URL=postgis://temba:temba@database_team_a/rapidpro
       - REDIS_HOST=redis_team_a
@@ -218,3 +211,21 @@ services:
       - TWITTER_API_SECRET=${TWITTER_API_SECRET}
     volumes:
       - ~/docker/rapidpro/media:/home/app/media
+
+  varnish:
+    image: thiagofigueiro/varnish-alpine-docker
+    restart: always
+    environment:
+      - VARNISH_BACKEND_ADDRESS=rear
+      - VARNISH_BACKEND_PORT=80
+    links:
+      - rear
+    ports:
+      - "80:80"
+    depends_on:
+      - rear
+  rear:
+    restart: always
+    build:
+      context: .
+      dockerfile: rear.Dockerfile
